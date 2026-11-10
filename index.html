@@ -1,0 +1,930 @@
+<!DOCTYPE html>
+<html lang="uz" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>COLDBEHACK - Signals Bot</title>
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- FontAwesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <!-- Google Font Inter -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;800;900&display=swap" rel="stylesheet">
+  
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'sans-serif'],
+          },
+          colors: {
+            cold: {
+              bg: '#081225',
+              card: '#0e1d38',
+              accent: '#00f0ff',
+              glow: 'rgba(0, 240, 255, 0.4)',
+              border: 'rgba(0, 240, 255, 0.25)'
+            },
+            linebet: {
+              bg: '#091c14',
+              card: '#102a1e',
+              accent: '#20e676',
+              glow: 'rgba(32, 230, 118, 0.4)',
+              border: 'rgba(32, 230, 118, 0.25)'
+            }
+          },
+          animation: {
+            'pulse-fast': 'pulse 1s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+            'bounce-short': 'bounce 0.5s ease-in-out 2',
+            'snow': 'snowfall 10s linear infinite'
+          }
+        }
+      }
+    }
+  </script>
+
+  <style>
+    body {
+      touch-action: manipulation;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+    
+    /* Cold Theme Glassmorphism */
+    .theme-cold {
+      background: radial-gradient(circle at top center, #0f2b48 0%, #060e1a 100%);
+    }
+    .theme-cold .glass-card {
+      background: rgba(14, 29, 56, 0.75);
+      backdrop-filter: blur(12px);
+      border: 1px solid rgba(0, 240, 255, 0.2);
+      box-shadow: 0 8px 32px 0 rgba(0, 240, 255, 0.1);
+    }
+    .theme-cold .accent-btn {
+      background: linear-gradient(135deg, #00c6ff 0%, #0072ff 100%);
+      box-shadow: 0 4px 20px rgba(0, 198, 255, 0.4);
+    }
+    .theme-cold .accent-text {
+      color: #00f0ff;
+    }
+
+    /* Linebet Theme Glassmorphism */
+    .theme-linebet {
+      background: radial-gradient(circle at top center, #103824 0%, #05120c 100%);
+    }
+    .theme-linebet .glass-card {
+      background: rgba(16, 42, 30, 0.75);
+      backdrop-filter: blur(12px);
+      border: 1px solid rgba(32, 230, 118, 0.2);
+      box-shadow: 0 8px 32px 0 rgba(32, 230, 118, 0.1);
+    }
+    .theme-linebet .accent-btn {
+      background: linear-gradient(135deg, #20e676 0%, #00a843 100%);
+      box-shadow: 0 4px 20px rgba(32, 230, 118, 0.4);
+    }
+    .theme-linebet .accent-text {
+      color: #20e676;
+    }
+
+    /* Custom Toast / Alert Notification */
+    #toast {
+      transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275), opacity 0.3s ease;
+    }
+
+    /* Snowflakes background effect for Cold mode */
+    .snowflake {
+      position: absolute;
+      color: rgba(255, 255, 255, 0.3);
+      font-size: 10px;
+      pointer-events: none;
+      animation: snowfall 8s linear infinite;
+    }
+    @keyframes snowfall {
+      0% { transform: translateY(-10px) rotate(0deg); opacity: 1; }
+      100% { transform: translateY(100vh) rotate(360deg); opacity: 0.2; }
+    }
+  </style>
+</head>
+<body class="theme-cold text-white min-h-screen font-sans flex flex-col justify-between overflow-x-hidden transition-colors duration-500">
+
+  <!-- Floating Toast Notification -->
+  <div id="toast" class="fixed top-4 left-1/2 -translate-x-1/2 z-50 transform -translate-y-20 opacity-0 bg-gray-900/90 text-white border border-cyan-500/40 px-5 py-2.5 rounded-full shadow-2xl backdrop-blur-md flex items-center space-x-2 text-sm font-semibold pointer-events-none">
+    <i id="toast-icon" class="fas fa-check-circle text-cyan-400"></i>
+    <span id="toast-msg">Xabar</span>
+  </div>
+
+  <!-- MAIN APP WRAPPER -->
+  <div class="max-w-md w-full mx-auto min-h-screen flex flex-col justify-between relative px-4 py-4">
+
+    <!-- BACKGROUND SNOW DECORATION -->
+    <div id="snow-container" class="absolute inset-0 overflow-hidden pointer-events-none z-0"></div>
+
+    <!-- HEADER / TOP BAR -->
+    <header class="relative z-10 flex items-center justify-between py-2 mb-3">
+      <div class="flex items-center space-x-2">
+        <button id="back-btn" onclick="goToDashboard()" class="hidden bg-white/10 hover:bg-white/20 active:scale-95 text-white px-3 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1 border border-white/10">
+          <i class="fas fa-arrow-left"></i> Orqaga
+        </button>
+        <div id="app-title-container" class="flex items-center space-x-2">
+          <div class="w-8 h-8 rounded-xl bg-gradient-to-tr from-cyan-500 to-blue-600 flex items-center justify-center font-black text-sm shadow-lg shadow-cyan-500/30">
+            <i class="fas fa-snowflake text-white" id="brand-logo"></i>
+          </div>
+          <div>
+            <h1 class="text-base font-black tracking-wider text-transparent bg-clip-text bg-gradient-to-r from-white to-gray-300">COLDBEHACK</h1>
+            <p class="text-[9px] tracking-widest text-cyan-400/80 font-bold -mt-1" id="sub-title">SIGNAL BOT v4.2</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Top Right Status Indicators -->
+      <div class="flex items-center space-x-1.5 text-[11px] font-semibold">
+        <span class="bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 px-2 py-0.5 rounded-full flex items-center gap-1">
+          <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping"></span> Online
+        </span>
+        <span class="bg-blue-500/20 text-blue-300 border border-blue-500/30 px-2 py-0.5 rounded-full">
+          <i class="fas fa-globe text-[10px]"></i> UZ
+        </span>
+      </div>
+    </header>
+
+    <!-- ========================================== -->
+    <!-- SCREEN 1: LOGIN / PLATFORM SELECTION -->
+    <!-- ========================================== -->
+    <main id="screen-login" class="relative z-10 flex-1 flex flex-col justify-center my-auto py-2">
+      <div class="glass-card rounded-3xl p-6 shadow-2xl relative overflow-hidden border">
+        
+        <!-- Subtle Glow Effect -->
+        <div class="absolute -top-12 -right-12 w-32 h-32 bg-cyan-500/20 rounded-full blur-2xl pointer-events-none" id="glow-bg"></div>
+
+        <div class="text-center mb-6">
+          <div class="inline-block p-3 rounded-2xl bg-cyan-500/10 border border-cyan-500/30 mb-2">
+            <i class="fas fa-shield-halved text-2xl accent-text" id="login-icon"></i>
+          </div>
+          <h2 class="text-xl font-extrabold tracking-wide">KIRISH VA FAOL LASHTIRISH</h2>
+          <p class="text-xs text-gray-400 mt-1">Platformani tanlang va kirish kodini kiriting</p>
+        </div>
+
+        <!-- Platform Picker Tabs -->
+        <div class="mb-5">
+          <label class="block text-xs font-bold text-gray-300 mb-2 uppercase tracking-wider">Platformani tanlang:</label>
+          <div class="grid grid-cols-2 gap-3 p-1.5 bg-black/40 rounded-2xl border border-white/5">
+            <button type="button" id="btn-select-coldbet" onclick="selectPlatform('coldbet')" class="py-3 px-2 rounded-xl text-xs font-extrabold flex flex-col items-center justify-center gap-1.5 transition-all border border-cyan-500/60 bg-cyan-500/20 text-cyan-300 shadow-md">
+              <i class="fas fa-cubes text-base"></i>
+              Coldbet
+            </button>
+            <button type="button" id="btn-select-linebet" onclick="selectPlatform('linebet')" class="py-3 px-2 rounded-xl text-xs font-extrabold flex flex-col items-center justify-center gap-1.5 transition-all border border-transparent text-gray-400 hover:text-white">
+              <i class="fas fa-bolt text-base"></i>
+              Linebet
+            </button>
+          </div>
+        </div>
+
+        <!-- Dynamic Promocode Box -->
+        <div class="mb-5 bg-white/5 p-3 rounded-2xl border border-white/10 flex items-center justify-between">
+          <div>
+            <span class="block text-[10px] text-gray-400 font-bold uppercase tracking-wider">Rasmiy Promokod</span>
+            <span id="promo-code-text" class="text-lg font-black tracking-widest text-yellow-400">MUZZ</span>
+          </div>
+          <button onclick="copyPromoCode()" class="bg-yellow-500/20 hover:bg-yellow-500/30 active:scale-95 text-yellow-300 border border-yellow-500/40 text-xs font-bold px-3 py-2 rounded-xl flex items-center gap-1.5 transition">
+            <i class="fas fa-copy"></i> Nusxalash
+          </button>
+        </div>
+
+        <!-- Form Inputs -->
+        <div class="space-y-4">
+          <div>
+            <label class="block text-xs font-bold text-gray-300 mb-1">Hisob ID (Account ID)</label>
+            <div class="relative">
+              <i class="fas fa-id-card absolute left-4 top-3.5 text-gray-400 text-sm"></i>
+              <input type="number" id="input-id" placeholder="Masalan: 48392019" class="w-full bg-black/50 border border-white/10 rounded-xl py-3 pl-11 pr-4 text-sm font-semibold focus:outline-none focus:border-cyan-400 transition placeholder-gray-500">
+            </div>
+            <p id="error-id" class="hidden text-red-400 text-[11px] font-semibold mt-1"><i class="fas fa-exclamation-circle"></i> Noto'g'ri ID kiritildi!</p>
+          </div>
+
+          <div>
+            <label class="block text-xs font-bold text-gray-300 mb-1">Kirish kodi / Activation Key</label>
+            <div class="relative">
+              <i class="fas fa-key absolute left-4 top-3.5 text-gray-400 text-sm"></i>
+              <input type="text" id="input-key" placeholder="Kirish kodi..." class="w-full bg-black/50 border border-white/10 rounded-xl py-3 pl-11 pr-4 text-sm font-semibold focus:outline-none focus:border-cyan-400 transition uppercase placeholder-gray-500">
+            </div>
+            <p id="error-key" class="hidden text-red-400 text-[11px] font-semibold mt-1"><i class="fas fa-exclamation-circle text-xs"></i> Kalit kodi noto'g'ri! (<span id="hint-key">MUZZ</span>)</p>
+          </div>
+
+          <button onclick="handleLoginSubmit()" class="w-full py-3.5 rounded-xl font-black text-sm tracking-wide accent-btn text-white transition transform active:scale-95 shadow-lg flex items-center justify-center space-x-2 mt-2">
+            <span>TIZIMGA KIRISH</span>
+            <i class="fas fa-right-to-bracket"></i>
+          </button>
+        </div>
+
+      </div>
+    </main>
+
+    <!-- ========================================== -->
+    <!-- SCREEN 2: GAME DASHBOARD (7 GAMES) -->
+    <!-- ========================================== -->
+    <main id="screen-dashboard" class="hidden relative z-10 flex-1 flex flex-col space-y-4 my-2">
+      
+      <!-- Active Platform Header Banner -->
+      <div class="glass-card rounded-2xl p-4 flex items-center justify-between border">
+        <div class="flex items-center space-x-3">
+          <div id="dash-platform-badge" class="w-10 h-10 rounded-xl bg-cyan-500/20 border border-cyan-400/40 flex items-center justify-center text-cyan-300 text-lg font-bold">
+            <i class="fas fa-snowflake" id="dash-platform-icon"></i>
+          </div>
+          <div>
+            <div class="flex items-center space-x-2">
+              <h3 id="dash-platform-name" class="font-extrabold text-sm">COLDBET VIP</h3>
+              <span class="bg-cyan-400/20 text-cyan-300 text-[9px] font-black px-2 py-0.5 rounded-full border border-cyan-400/30">FAOL</span>
+            </div>
+            <p class="text-[11px] text-gray-400">ID: <span id="dash-user-id" class="font-mono text-gray-200">12345678</span></p>
+          </div>
+        </div>
+        <button onclick="openActivationModal()" class="bg-white/10 hover:bg-white/20 active:scale-95 text-xs text-cyan-300 border border-cyan-400/30 px-3 py-1.5 rounded-xl font-bold transition">
+          <i class="fas fa-info-circle"></i> Yo'riqnoma
+        </button>
+      </div>
+
+      <!-- 6 MAIN GAMES GRID -->
+      <div>
+        <h3 class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2 px-1">Mavjud Signal O'yinlari</h3>
+        <div class="grid grid-cols-2 gap-3">
+          
+          <!-- Game 1: Apple of Fortune -->
+          <div onclick="openGame('apple')" class="glass-card rounded-2xl p-3.5 border cursor-pointer hover:border-cyan-400/50 active:scale-95 transition flex flex-col justify-between group">
+            <div class="flex items-center justify-between mb-3">
+              <div class="w-10 h-10 rounded-xl bg-red-500/20 border border-red-500/30 flex items-center justify-center text-red-400 text-xl shadow-lg">
+                🍎
+              </div>
+              <span class="text-[10px] bg-white/10 text-gray-300 px-2 py-0.5 rounded-md font-bold">98% Aniq</span>
+            </div>
+            <div>
+              <h4 class="font-extrabold text-xs group-hover:text-cyan-300 transition">Apple of Fortune</h4>
+              <p class="text-[10px] text-gray-400 mt-0.5">Olma yo'lini bashorat qilish</p>
+            </div>
+          </div>
+
+          <!-- Game 2: Thimbles -->
+          <div onclick="openGame('thimbles')" class="glass-card rounded-2xl p-3.5 border cursor-pointer hover:border-cyan-400/50 active:scale-95 transition flex flex-col justify-between group">
+            <div class="flex items-center justify-between mb-3">
+              <div class="w-10 h-10 rounded-xl bg-amber-500/20 border border-amber-500/30 flex items-center justify-center text-amber-400 text-xl shadow-lg">
+                🔔
+              </div>
+              <span class="text-[10px] bg-white/10 text-gray-300 px-2 py-0.5 rounded-md font-bold">97% Aniq</span>
+            </div>
+            <div>
+              <h4 class="font-extrabold text-xs group-hover:text-cyan-300 transition">Thimbles</h4>
+              <p class="text-[10px] text-gray-400 mt-0.5">Shar joyini topish</p>
+            </div>
+          </div>
+
+          <!-- Game 3: Mines -->
+          <div onclick="openGame('mines')" class="glass-card rounded-2xl p-3.5 border cursor-pointer hover:border-cyan-400/50 active:scale-95 transition flex flex-col justify-between group">
+            <div class="flex items-center justify-between mb-3">
+              <div class="w-10 h-10 rounded-xl bg-blue-500/20 border border-blue-500/30 flex items-center justify-center text-blue-400 text-xl shadow-lg">
+                💎
+              </div>
+              <span class="text-[10px] bg-white/10 text-gray-300 px-2 py-0.5 rounded-md font-bold">99% Aniq</span>
+            </div>
+            <div>
+              <h4 class="font-extrabold text-xs group-hover:text-cyan-300 transition">Mines 💎</h4>
+              <p class="text-[10px] text-gray-400 mt-0.5">Xavfsiz kataklarni ochish</p>
+            </div>
+          </div>
+
+          <!-- Game 4: Wild West Gold -->
+          <div onclick="openGame('wildwest')" class="glass-card rounded-2xl p-3.5 border cursor-pointer hover:border-cyan-400/50 active:scale-95 transition flex flex-col justify-between group">
+            <div class="flex items-center justify-between mb-3">
+              <div class="w-10 h-10 rounded-xl bg-yellow-600/20 border border-yellow-600/30 flex items-center justify-center text-yellow-500 text-xl shadow-lg">
+                🤠
+              </div>
+              <span class="text-[10px] bg-white/10 text-gray-300 px-2 py-0.5 rounded-md font-bold">95% Aniq</span>
+            </div>
+            <div>
+              <h4 class="font-extrabold text-xs group-hover:text-cyan-300 transition">Wild West Gold</h4>
+              <p class="text-[10px] text-gray-400 mt-0.5">Oltin sandiqlarni topish</p>
+            </div>
+          </div>
+
+          <!-- Game 5: Kamikaze -->
+          <div onclick="openGame('kamikaze')" class="glass-card rounded-2xl p-3.5 border cursor-pointer hover:border-cyan-400/50 active:scale-95 transition flex flex-col justify-between group">
+            <div class="flex items-center justify-between mb-3">
+              <div class="w-10 h-10 rounded-xl bg-indigo-500/20 border border-indigo-500/30 flex items-center justify-center text-indigo-400 text-xl shadow-lg">
+                ✈️
+              </div>
+              <span class="text-[10px] bg-white/10 text-gray-300 px-2 py-0.5 rounded-md font-bold">96% Aniq</span>
+            </div>
+            <div>
+              <h4 class="font-extrabold text-xs group-hover:text-cyan-300 transition">Kamikaze</h4>
+              <p class="text-[10px] text-gray-400 mt-0.5">Xavfsiz uchish yo'li</p>
+            </div>
+          </div>
+
+          <!-- Game 6: Swamp Land -->
+          <div onclick="openGame('swampland')" class="glass-card rounded-2xl p-3.5 border cursor-pointer hover:border-cyan-400/50 active:scale-95 transition flex flex-col justify-between group">
+            <div class="flex items-center justify-between mb-3">
+              <div class="w-10 h-10 rounded-xl bg-emerald-500/20 border border-emerald-500/30 flex items-center justify-center text-emerald-400 text-xl shadow-lg">
+                🐸
+              </div>
+              <span class="text-[10px] bg-white/10 text-gray-300 px-2 py-0.5 rounded-md font-bold">97% Aniq</span>
+            </div>
+            <div>
+              <h4 class="font-extrabold text-xs group-hover:text-cyan-300 transition">Swamp Land</h4>
+              <p class="text-[10px] text-gray-400 mt-0.5">Qurbaqa sakrash yo'li</p>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- GAME 7: AVIATOR PREDICTOR BANNER (Image 486 style) -->
+      <div onclick="openGame('aviator')" class="glass-card rounded-3xl p-4 border border-rose-500/30 bg-gradient-to-r from-rose-950/40 via-purple-950/30 to-black/60 cursor-pointer hover:border-rose-400 transition active:scale-95 shadow-xl relative overflow-hidden group">
+        <div class="absolute -right-6 -bottom-6 w-24 h-24 bg-rose-500/10 rounded-full blur-xl pointer-events-none"></div>
+        <div class="flex items-center justify-between mb-2">
+          <div class="flex items-center space-x-2">
+            <span class="text-2xl animate-pulse">🚀</span>
+            <h4 class="text-base font-black tracking-wide text-transparent bg-clip-text bg-gradient-to-r from-rose-400 to-red-200">AVIATOR Predictor</h4>
+          </div>
+          <span class="bg-rose-500/20 text-rose-300 text-[10px] font-black px-2.5 py-1 rounded-full border border-rose-500/30">AI ALGORITM</span>
+        </div>
+        <p class="text-xs text-gray-300 mb-3 font-medium">Sun'iy intellekt tahlili asosida Aviator koeffitsient signalini oling</p>
+        <button class="w-full py-2.5 rounded-xl font-black text-xs tracking-wider bg-gradient-to-r from-rose-600 to-red-500 text-white shadow-lg shadow-rose-600/30 group-hover:brightness-110 transition flex items-center justify-center gap-2">
+          <span>SIGNAL OLISH</span>
+          <i class="fas fa-bolt"></i>
+        </button>
+      </div>
+
+    </main>
+
+    <!-- ========================================== -->
+    <!-- SCREEN 3: INTERACTIVE GAME SIGNAL VIEWS -->
+    <!-- ========================================== -->
+
+    <!-- 1. THIMBLES GAME VIEW (Image 487 style) -->
+    <main id="game-thimbles" class="hidden relative z-10 flex-1 flex flex-col space-y-4 my-auto">
+      <div class="glass-card rounded-3xl p-5 border text-center relative">
+        <h3 class="text-lg font-black tracking-widest text-cyan-400 mb-4">THIMBLES</h3>
+
+        <!-- Multiplier Selectors -->
+        <div class="grid grid-cols-2 gap-3 mb-6">
+          <button id="thimbles-mode-145" onclick="setThimblesMode('1.45')" class="py-2.5 px-3 rounded-xl text-xs font-bold border border-cyan-400/30 bg-white/5 text-gray-300 transition">
+            1.45x (2 shar)
+          </button>
+          <button id="thimbles-mode-291" onclick="setThimblesMode('2.91')" class="py-2.5 px-3 rounded-xl text-xs font-bold border border-cyan-400 bg-cyan-500/30 text-white shadow-lg transition">
+            2.91x (1 shar)
+          </button>
+        </div>
+
+        <!-- 3 Thimbles Cups -->
+        <div class="flex justify-center items-center space-x-3 py-6">
+          <div id="cup-1" class="w-24 h-28 bg-gradient-to-b from-amber-600 to-amber-800 rounded-t-2xl border-2 border-amber-400 shadow-xl flex flex-col items-center justify-center transition-all duration-500 relative">
+            <span class="text-2xl font-black text-white/90">1</span>
+            <div id="ball-1" class="hidden absolute bottom-2 text-2xl animate-bounce">⚽</div>
+          </div>
+          <div id="cup-2" class="w-24 h-28 bg-gradient-to-b from-amber-600 to-amber-800 rounded-t-2xl border-2 border-amber-400 shadow-xl flex flex-col items-center justify-center transition-all duration-500 relative">
+            <span class="text-2xl font-black text-white/90">2</span>
+            <div id="ball-2" class="hidden absolute bottom-2 text-2xl animate-bounce">⚽</div>
+          </div>
+          <div id="cup-3" class="w-24 h-28 bg-gradient-to-b from-amber-600 to-amber-800 rounded-t-2xl border-2 border-amber-400 shadow-xl flex flex-col items-center justify-center transition-all duration-500 relative">
+            <span class="text-2xl font-black text-white/90">3</span>
+            <div id="ball-3" class="hidden absolute bottom-2 text-2xl animate-bounce">⚽</div>
+          </div>
+        </div>
+
+        <p id="thimbles-status" class="text-xs text-gray-400 mb-6 font-medium">2.91x rejimi tanlangan. START ni bosing</p>
+
+        <button onclick="generateThimblesSignal()" id="btn-thimbles-start" class="w-full py-3.5 rounded-2xl font-black text-sm accent-btn text-white transition active:scale-95 shadow-lg">
+          START
+        </button>
+      </div>
+    </main>
+
+    <!-- 2. MINES GAME VIEW (Image 488 style) -->
+    <main id="game-mines" class="hidden relative z-10 flex-1 flex flex-col space-y-4 my-auto">
+      <div class="glass-card rounded-3xl p-5 border text-center">
+        <h3 class="text-lg font-black tracking-widest text-cyan-400 mb-3">MINES</h3>
+
+        <!-- Mines Count Selector Dropdown -->
+        <div class="flex items-center justify-center space-x-2 mb-4">
+          <span class="text-xs text-gray-300 font-bold">Minalar:</span>
+          <select id="mines-count-select" class="bg-black/60 border border-cyan-400/40 rounded-xl px-3 py-1.5 text-xs font-bold text-cyan-300 focus:outline-none">
+            <option value="1">1 Mina 💣</option>
+            <option value="3" selected>3 Mina 💣</option>
+            <option value="5">5 Mina 💣</option>
+            <option value="7">7 Mina 💣</option>
+          </select>
+        </div>
+
+        <!-- 5x5 Mines Grid -->
+        <div id="mines-grid" class="grid grid-cols-5 gap-2 max-w-[260px] mx-auto mb-4 p-2 bg-black/40 rounded-2xl border border-white/10">
+          <!-- 25 Cells generated by JavaScript -->
+        </div>
+
+        <p id="mines-status" class="text-xs text-gray-400 mb-5 font-medium">Minalar sonini tanlang va SIGNAL OLISH ni bosing</p>
+
+        <button onclick="generateMinesSignal()" id="btn-mines-start" class="w-full py-3.5 rounded-2xl font-black text-sm accent-btn text-white transition active:scale-95 shadow-lg">
+          SIGNAL OLISH
+        </button>
+      </div>
+    </main>
+
+    <!-- 3. AVIATOR GAME VIEW -->
+    <main id="game-aviator" class="hidden relative z-10 flex-1 flex flex-col space-y-4 my-auto">
+      <div class="glass-card rounded-3xl p-6 border text-center">
+        <h3 class="text-lg font-black tracking-widest text-rose-400 mb-2">AVIATOR PREDICTOR</h3>
+        <p class="text-xs text-gray-400 mb-6">Navbatdagi uchish koeffitsienti</p>
+
+        <div class="my-6 py-8 bg-black/50 rounded-2xl border border-rose-500/30 flex flex-col items-center justify-center relative overflow-hidden">
+          <div class="text-5xl font-black text-transparent bg-clip-text bg-gradient-to-r from-rose-400 to-red-200 font-mono tracking-wider" id="aviator-result">
+            1.00x
+          </div>
+          <div id="aviator-anim" class="hidden text-3xl mt-2 animate-bounce">✈️</div>
+        </div>
+
+        <p id="aviator-status" class="text-xs text-gray-400 mb-6 font-medium">Signal olish uchun tugmani bosing</p>
+
+        <button onclick="generateAviatorSignal()" id="btn-aviator-start" class="w-full py-3.5 rounded-2xl font-black text-sm bg-gradient-to-r from-rose-600 to-red-500 text-white transition active:scale-95 shadow-lg shadow-rose-600/40">
+          SIGNAL OLISH
+        </button>
+      </div>
+    </main>
+
+    <!-- 4. GENERAL GRID GAMES (Apple, Wild West, Kamikaze, Swamp Land) -->
+    <main id="game-generic" class="hidden relative z-10 flex-1 flex flex-col space-y-4 my-auto">
+      <div class="glass-card rounded-3xl p-5 border text-center">
+        <h3 id="generic-title" class="text-lg font-black tracking-widest text-cyan-400 mb-2">GAME NAME</h3>
+        <p id="generic-desc" class="text-xs text-gray-400 mb-4">Signal va yo'laklar tahlili</p>
+
+        <!-- Generic Game Grid Container -->
+        <div id="generic-grid" class="max-w-[280px] mx-auto mb-5 p-3 bg-black/40 rounded-2xl border border-white/10 space-y-2">
+          <!-- Generated via JS -->
+        </div>
+
+        <p id="generic-status" class="text-xs text-gray-400 mb-5 font-medium">SIGNAL OLISH tugmasini bosing</p>
+
+        <button onclick="generateGenericSignal()" id="btn-generic-start" class="w-full py-3.5 rounded-2xl font-black text-sm accent-btn text-white transition active:scale-95 shadow-lg">
+          SIGNAL OLISH
+        </button>
+      </div>
+    </main>
+
+
+    <!-- ========================================== -->
+    <!-- FOOTER LINKS & TELEGRAM BUTTONS -->
+    <!-- ========================================== -->
+    <footer class="relative z-10 pt-3 pb-1 border-t border-white/10 mt-auto">
+      <div class="flex items-center justify-between text-[11px] text-gray-400 mb-3 px-1">
+        <span>POWERED BY <strong class="text-gray-200">THEEAGLE</strong></span>
+        <span class="flex items-center gap-1 font-bold text-emerald-400">
+          <span class="w-2 h-2 rounded-full bg-emerald-400"></span> Bot faol: 95%
+        </span>
+      </div>
+
+      <!-- Action External Buttons -->
+      <div class="grid grid-cols-2 gap-2.5">
+        <a href="https://t.me/MUZZCOLD" target="_blank" class="bg-blue-600/20 hover:bg-blue-600/30 border border-blue-500/40 py-2.5 px-3 rounded-xl text-xs font-bold text-blue-300 flex items-center justify-center space-x-2 transition active:scale-95">
+          <i class="fab text-sm font-black text-blue-400"></i>
+          <span>Telegram Kanal</span>
+        </a>
+        <a href="https://t.me/ZYNEX2_x27" target="_blank" class="bg-purple-600/20 hover:bg-purple-600/30 border border-purple-500/40 py-2.5 px-3 rounded-xl text-xs font-bold text-purple-300 flex items-center justify-center space-x-2 transition active:scale-95">
+          <i class="fas fa-headset text-sm text-purple-400"></i>
+          <span>Admin Support</span>
+        </a>
+      </div>
+    </footer>
+
+  </div>
+
+  <!-- ========================================== -->
+  <!-- ACTIVATION POPUP MODAL (Image 490 style) -->
+  <!-- ========================================== -->
+  <div id="modal-activation" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center px-4 opacity-0 pointer-events-none transition-opacity duration-300">
+    <div class="glass-card rounded-3xl p-6 max-w-sm w-full border text-center transform scale-90 transition-transform duration-300" id="modal-box">
+      
+      <div class="w-16 h-16 bg-blue-500/20 border border-blue-400/40 rounded-2xl flex items-center justify-center mx-auto mb-4 text-3xl">
+        📢
+      </div>
+
+      <h3 class="text-base font-black tracking-wider text-white mb-2">TIZIMNI FAOL'LASHTIRISH</h3>
+      
+      <div class="text-xs text-gray-300 leading-relaxed space-y-2 mb-6 bg-black/40 p-4 rounded-2xl border border-white/5">
+        <p>
+          <span id="modal-platform-name" class="font-bold text-cyan-300">Coldbet</span> ilovasini yuklab olib, 
+          <strong id="modal-promo-code" class="text-yellow-400 font-extrabold">MUZZ</strong> promokodi orqali yangi account oching va hisobingizni kamida <span class="text-emerald-400 font-bold">60.000 so'm</span> ga to'ldiring.
+        </p>
+        <p class="text-[11px] text-gray-400 pt-1 border-t border-white/10">
+          Shunda <strong class="text-white">COLDBEHACK</strong> algoritmi 100% aniq va bexato ishlaydi!
+        </p>
+      </div>
+
+      <button onclick="closeActivationModal()" class="w-full py-3 rounded-xl font-bold text-xs accent-btn text-white transition active:scale-95 shadow-lg">
+        Tushundim
+      </button>
+
+    </div>
+  </div>
+
+  <!-- JAVASCRIPT LOGIC -->
+  <script>
+    // State Management
+    let currentPlatform = 'coldbet'; // 'coldbet' or 'linebet'
+    let selectedThimblesMode = '2.91';
+    let currentGame = null;
+
+    const PLATFORM_CONFIG = {
+      coldbet: {
+        name: 'Coldbet',
+        key: 'MUZZ',
+        promo: 'MUZZ',
+        themeClass: 'theme-cold',
+        icon: 'fa-snowflake',
+        accentColor: '#00f0ff'
+      },
+      linebet: {
+        name: 'Linebet',
+        key: 'BE127',
+        promo: 'BE127',
+        themeClass: 'theme-linebet',
+        icon: 'fa-bolt',
+        accentColor: '#20e676'
+      }
+    };
+
+    // DOM Elements
+    const body = document.body;
+    const btnColdbet = document.getElementById('btn-select-coldbet');
+    const btnLinebet = document.getElementById('btn-select-linebet');
+    const promoCodeText = document.getElementById('promo-code-text');
+    const hintKey = document.getElementById('hint-key');
+    const screenLogin = document.getElementById('screen-login');
+    const screenDashboard = document.getElementById('screen-dashboard');
+    const backBtn = document.getElementById('back-btn');
+    const appTitleContainer = document.getElementById('app-title-container');
+
+    // Create Snow effect on start
+    function initSnow() {
+      const container = document.getElementById('snow-container');
+      container.innerHTML = '';
+      for (let i = 0; i < 20; i++) {
+        const flake = document.createElement('div');
+        flake.className = 'snowflake';
+        flake.innerHTML = '❄';
+        flake.style.left = Math.random() * 100 + 'vw';
+        flake.style.animationDuration = (Math.random() * 5 + 5) + 's';
+        flake.style.animationDelay = Math.random() * 5 + 's';
+        container.appendChild(flake);
+      }
+    }
+    initSnow();
+
+    // Switch Platform Style (Coldbet vs Linebet)
+    function selectPlatform(platform) {
+      currentPlatform = platform;
+      const config = PLATFORM_CONFIG[platform];
+
+      if (platform === 'coldbet') {
+        body.className = 'theme-cold text-white min-h-screen font-sans flex flex-col justify-between overflow-x-hidden transition-colors duration-500';
+        btnColdbet.className = 'py-3 px-2 rounded-xl text-xs font-extrabold flex flex-col items-center justify-center gap-1.5 transition-all border border-cyan-500/60 bg-cyan-500/20 text-cyan-300 shadow-md';
+        btnLinebet.className = 'py-3 px-2 rounded-xl text-xs font-extrabold flex flex-col items-center justify-center gap-1.5 transition-all border border-transparent text-gray-400 hover:text-white';
+        document.getElementById('brand-logo').className = 'fas fa-snowflake text-white';
+      } else {
+        body.className = 'theme-linebet text-white min-h-screen font-sans flex flex-col justify-between overflow-x-hidden transition-colors duration-500';
+        btnLinebet.className = 'py-3 px-2 rounded-xl text-xs font-extrabold flex flex-col items-center justify-center gap-1.5 transition-all border border-emerald-500/60 bg-emerald-500/20 text-emerald-300 shadow-md';
+        btnColdbet.className = 'py-3 px-2 rounded-xl text-xs font-extrabold flex flex-col items-center justify-center gap-1.5 transition-all border border-transparent text-gray-400 hover:text-white';
+        document.getElementById('brand-logo').className = 'fas fa-bolt text-white';
+      }
+
+      promoCodeText.innerText = config.promo;
+      hintKey.innerText = config.key;
+    }
+
+    // Copy Promocode function
+    function copyPromoCode() {
+      const promo = PLATFORM_CONFIG[currentPlatform].promo;
+      const tempInput = document.createElement('input');
+      tempInput.value = promo;
+      document.body.appendChild(tempInput);
+      tempInput.select();
+      document.execCommand('copy');
+      document.body.removeChild(tempInput);
+
+      showToast(`Promokod "${promo}" nusxalandi!`, 'fa-copy');
+    }
+
+    // Show Toast Notification
+    function showToast(message, iconClass = 'fa-check-circle') {
+      const toast = document.getElementById('toast');
+      const toastMsg = document.getElementById('toast-msg');
+      const toastIcon = document.getElementById('toast-icon');
+
+      toastMsg.innerText = message;
+      toastIcon.className = `fas ${iconClass} accent-text`;
+
+      toast.classList.remove('opacity-0', '-translate-y-20', 'pointer-events-none');
+      toast.classList.add('opacity-100', 'translate-y-0');
+
+      setTimeout(() => {
+        toast.classList.remove('opacity-100', 'translate-y-0');
+        toast.classList.add('opacity-0', '-translate-y-20', 'pointer-events-none');
+      }, 2500);
+    }
+
+    // Handle Login Validation
+    function handleLoginSubmit() {
+      const idInput = document.getElementById('input-id').value.trim();
+      const keyInput = document.getElementById('input-key').value.trim().toUpperCase();
+
+      const errorId = document.getElementById('error-id');
+      const errorKey = document.getElementById('error-key');
+
+      let isValid = true;
+
+      // Validate ID
+      if (!idInput || idInput.length < 5) {
+        errorId.classList.remove('hidden');
+        isValid = false;
+      } else {
+        errorId.classList.add('hidden');
+      }
+
+      // Validate Key
+      const requiredKey = PLATFORM_CONFIG[currentPlatform].key;
+      if (keyInput !== requiredKey) {
+        errorKey.classList.remove('hidden');
+        isValid = false;
+      } else {
+        errorKey.classList.add('hidden');
+      }
+
+      if (isValid) {
+        showToast("Muvaffaqiyatli kirildi!", "fa-shield-check");
+        
+        // Update Dashboard Info
+        document.getElementById('dash-platform-name').innerText = PLATFORM_CONFIG[currentPlatform].name.toUpperCase() + ' VIP';
+        document.getElementById('dash-user-id').innerText = idInput;
+        document.getElementById('dash-platform-icon').className = `fas ${PLATFORM_CONFIG[currentPlatform].icon}`;
+
+        // Hide Login, Show Dashboard
+        screenLogin.classList.add('hidden');
+        screenDashboard.classList.remove('hidden');
+
+        // Automatically trigger activation popup instruction modal
+        setTimeout(() => {
+          openActivationModal();
+        }, 600);
+      }
+    }
+
+    // Activation Popup Modal Controls
+    function openActivationModal() {
+      const modal = document.getElementById('modal-activation');
+      const modalBox = document.getElementById('modal-box');
+      
+      document.getElementById('modal-platform-name').innerText = PLATFORM_CONFIG[currentPlatform].name;
+      document.getElementById('modal-promo-code').innerText = PLATFORM_CONFIG[currentPlatform].promo;
+
+      modal.classList.remove('opacity-0', 'pointer-events-none');
+      modalBox.classList.remove('scale-90');
+      modalBox.classList.add('scale-100');
+    }
+
+    function closeActivationModal() {
+      const modal = document.getElementById('modal-activation');
+      const modalBox = document.getElementById('modal-box');
+
+      modalBox.classList.remove('scale-100');
+      modalBox.classList.add('scale-90');
+      modal.classList.add('opacity-0', 'pointer-events-none');
+    }
+
+    // Navigation & Screen Switches
+    function openGame(gameKey) {
+      currentGame = gameKey;
+      screenDashboard.classList.add('hidden');
+      backBtn.classList.remove('hidden');
+      appTitleContainer.classList.add('hidden');
+
+      // Hide all game screens
+      document.getElementById('game-thimbles').classList.add('hidden');
+      document.getElementById('game-mines').classList.add('hidden');
+      document.getElementById('game-aviator').classList.add('hidden');
+      document.getElementById('game-generic').classList.add('hidden');
+
+      if (gameKey === 'thimbles') {
+        document.getElementById('game-thimbles').classList.remove('hidden');
+        resetThimbles();
+      } else if (gameKey === 'mines') {
+        document.getElementById('game-mines').classList.remove('hidden');
+        initMinesGrid();
+      } else if (gameKey === 'aviator') {
+        document.getElementById('game-aviator').classList.remove('hidden');
+      } else {
+        document.getElementById('game-generic').classList.remove('hidden');
+        setupGenericGame(gameKey);
+      }
+    }
+
+    function goToDashboard() {
+      // Hide back button, show main header title
+      backBtn.classList.add('hidden');
+      appTitleContainer.classList.remove('hidden');
+
+      // Hide all games, show dashboard
+      document.getElementById('game-thimbles').classList.add('hidden');
+      document.getElementById('game-mines').classList.add('hidden');
+      document.getElementById('game-aviator').classList.add('hidden');
+      document.getElementById('game-generic').classList.add('hidden');
+      
+      screenDashboard.classList.remove('hidden');
+    }
+
+    // ==========================================
+    // GAME LOGIC IMPLEMENTATIONS
+    // ==========================================
+
+    // 1. THIMBLES GAME LOGIC
+    function setThimblesMode(mode) {
+      selectedThimblesMode = mode;
+      const btn145 = document.getElementById('thimbles-mode-145');
+      const btn291 = document.getElementById('thimbles-mode-291');
+      const statusText = document.getElementById('thimbles-status');
+
+      if (mode === '1.45') {
+        btn145.className = 'py-2.5 px-3 rounded-xl text-xs font-bold border border-cyan-400 bg-cyan-500/30 text-white shadow-lg transition';
+        btn291.className = 'py-2.5 px-3 rounded-xl text-xs font-bold border border-cyan-400/30 bg-white/5 text-gray-300 transition';
+        statusText.innerText = '1.45x rejimi (2 shar) tanlangan. START ni bosing';
+      } else {
+        btn291.className = 'py-2.5 px-3 rounded-xl text-xs font-bold border border-cyan-400 bg-cyan-500/30 text-white shadow-lg transition';
+        btn145.className = 'py-2.5 px-3 rounded-xl text-xs font-bold border border-cyan-400/30 bg-white/5 text-gray-300 transition';
+        statusText.innerText = '2.91x rejimi (1 shar) tanlangan. START ni bosing';
+      }
+      resetThimbles();
+    }
+
+    function resetThimbles() {
+      for (let i = 1; i <= 3; i++) {
+        const cup = document.getElementById(`cup-${i}`);
+        const ball = document.getElementById(`ball-${i}`);
+        cup.style.transform = 'translateY(0px)';
+        ball.classList.add('hidden');
+      }
+    }
+
+    function generateThimblesSignal() {
+      const btn = document.getElementById('btn-thimbles-start');
+      btn.disabled = true;
+      btn.innerText = "ALGORITM TAHLIL QILMOQDA...";
+
+      resetThimbles();
+
+      setTimeout(() => {
+        let winCups = [];
+        if (selectedThimblesMode === '1.45') {
+          // 2 balls
+          const first = Math.floor(Math.random() * 3) + 1;
+          let second = Math.floor(Math.random() * 3) + 1;
+          while (second === first) second = Math.floor(Math.random() * 3) + 1;
+          winCups = [first, second];
+        } else {
+          // 1 ball
+          winCups = [Math.floor(Math.random() * 3) + 1];
+        }
+
+        winCups.forEach(cupId => {
+          document.getElementById(`cup-${cupId}`).style.transform = 'translateY(-25px)';
+          document.getElementById(`ball-${cupId}`).classList.remove('hidden');
+        });
+
+        document.getElementById('thimbles-status').innerText = `Shar ${winCups.join(', ')}-idish tagida!`;
+        btn.disabled = false;
+        btn.innerText = "START";
+        showToast("Signal tayyor!", "fa-bullseye");
+      }, 1200);
+    }
+
+    // 2. MINES GAME LOGIC
+    function initMinesGrid() {
+      const grid = document.getElementById('mines-grid');
+      grid.innerHTML = '';
+      for (let i = 0; i < 25; i++) {
+        const cell = document.createElement('div');
+        cell.id = `mine-cell-${i}`;
+        cell.className = 'w-full h-10 bg-cyan-950/60 border border-cyan-500/20 rounded-xl flex items-center justify-center text-sm font-bold transition';
+        grid.appendChild(cell);
+      }
+    }
+
+    function generateMinesSignal() {
+      const btn = document.getElementById('btn-mines-start');
+      btn.disabled = true;
+      btn.innerText = "HISOB-KITOB QILINMOQDA...";
+
+      // Reset Grid
+      initMinesGrid();
+
+      setTimeout(() => {
+        const mineCount = parseInt(document.getElementById('mines-count-select').value);
+        let safeCount = mineCount === 1 ? 5 : mineCount === 3 ? 4 : mineCount === 5 ? 3 : 2;
+
+        const safeIndexes = new Set();
+        while (safeIndexes.size < safeCount) {
+          safeIndexes.add(Math.floor(Math.random() * 25));
+        }
+
+        safeIndexes.forEach(idx => {
+          const cell = document.getElementById(`mine-cell-${idx}`);
+          cell.className = 'w-full h-10 bg-gradient-to-tr from-cyan-500 to-blue-500 border border-cyan-300 rounded-xl flex items-center justify-center text-sm shadow-lg shadow-cyan-500/40 animate-bounce-short';
+          cell.innerHTML = '💎';
+        });
+
+        document.getElementById('mines-status').innerText = `${safeCount} ta xavfsiz olmos joylashuvi aniqlandi!`;
+        btn.disabled = false;
+        btn.innerText = "SIGNAL OLISH";
+        showToast("Mines signali tayyor!", "fa-gem");
+      }, 1000);
+    }
+
+    // 3. AVIATOR GAME LOGIC
+    function generateAviatorSignal() {
+      const btn = document.getElementById('btn-aviator-start');
+      const resultEl = document.getElementById('aviator-result');
+      const anim = document.getElementById('aviator-anim');
+
+      btn.disabled = true;
+      btn.innerText = "SERVERGA BOG'LANMOQDA...";
+      anim.classList.remove('hidden');
+
+      let counter = 1.00;
+      const target = (Math.random() * 4 + 1.2).toFixed(2);
+
+      const interval = setInterval(() => {
+        counter += 0.25;
+        resultEl.innerText = counter.toFixed(2) + 'x';
+        if (counter >= target) {
+          clearInterval(interval);
+          resultEl.innerText = target + 'x';
+          anim.classList.add('hidden');
+          btn.disabled = false;
+          btn.innerText = "SIGNAL OLISH";
+          showToast(`Aviator signal: ${target}x`, "fa-plane");
+        }
+      }, 80);
+    }
+
+    // 4. GENERIC GAMES (Apple, WildWest, Kamikaze, Swampland)
+    const GENERIC_GAMES_DATA = {
+      apple: { title: "APPLE OF FORTUNE", icon: "🍎", rows: 4, cols: 5, safePerColumn: 1 },
+      wildwest: { title: "WILD WEST GOLD", icon: "🤠", rows: 4, cols: 3, safePerColumn: 1 },
+      kamikaze: { title: "KAMIKAZE", icon: "✈️", rows: 5, cols: 4, safePerColumn: 1 },
+      swampland: { title: "SWAMP LAND", icon: "🐸", rows: 4, cols: 5, safePerColumn: 1 }
+    };
+
+    function setupGenericGame(gameKey) {
+      const config = GENERIC_GAMES_DATA[gameKey];
+      document.getElementById('generic-title').innerText = config.title;
+      document.getElementById('generic-desc').innerText = `${config.icon} Xavfsiz marshrut algoritmi`;
+      
+      const grid = document.getElementById('generic-grid');
+      grid.innerHTML = '';
+      grid.style.gridTemplateColumns = `repeat(${config.cols}, minmax(0, 1fr))`;
+      grid.className = `grid gap-2 max-w-[280px] mx-auto mb-5 p-3 bg-black/40 rounded-2xl border border-white/10`;
+
+      const total = config.rows * config.cols;
+      for (let i = 0; i < total; i++) {
+        const cell = document.createElement('div');
+        cell.id = `gen-cell-${i}`;
+        cell.className = 'h-10 bg-white/5 border border-white/10 rounded-xl flex items-center justify-center text-xs font-bold text-gray-400';
+        cell.innerText = '?';
+        grid.appendChild(cell);
+      }
+    }
+
+    function generateGenericSignal() {
+      const config = GENERIC_GAMES_DATA[currentGame];
+      const btn = document.getElementById('btn-generic-start');
+      btn.disabled = true;
+      btn.innerText = "TAHLIL QILINMOQDA...";
+
+      // Reset cells
+      setupGenericGame(currentGame);
+
+      setTimeout(() => {
+        // Highlight 1 safe cell per row from bottom to top
+        for (let row = 0; row < config.rows; row++) {
+          const randomCol = Math.floor(Math.random() * config.cols);
+          const cellIndex = row * config.cols + randomCol;
+          const cell = document.getElementById(`gen-cell-${cellIndex}`);
+
+          cell.className = 'h-10 bg-gradient-to-r from-emerald-500 to-green-600 text-white font-extrabold border border-emerald-300 rounded-xl flex items-center justify-center text-base shadow-lg shadow-emerald-500/30 animate-pulse';
+          cell.innerText = config.icon;
+        }
+
+        document.getElementById('generic-status').innerText = 'Xavfsiz qadamlar belgilandi!';
+        btn.disabled = false;
+        btn.innerText = "SIGNAL OLISH";
+        showToast("Signal tayyor!", "fa-check");
+      }, 1000);
+    }
+  </script>
+</body>
+            </html>
